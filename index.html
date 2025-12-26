@@ -1,447 +1,246 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mysore & Coorg Expense Tracker</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <style>
-        :root {
-            --primary: #007bff;
-            --secondary: #6c757d;
-            --success: #28a745;
-            --danger: #dc3545;
-            --light: #f8f9fa;
-            --dark: #343a40;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: var(--light);
-            color: var(--dark);
-        }
-        .container { max-width: 1000px; margin: auto; }
-        h1, h2, h3 { color: var(--dark); border-bottom: 2px solid #ccc; padding-bottom: 5px; }
-        .grid { display: grid; gap: 20px; }
-        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        form label { display: block; margin-top: 10px; font-weight: bold; }
-        form input[type="date"], form input[type="text"], form input[type="number"], form select {
-            width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-        }
-        form button {
-            background-color: var(--primary); color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px;
-        }
-        form button:hover { background-color: #0056b3; }
-        #settlement-summary p { background-color: #e2f0e7; padding: 10px; border-left: 5px solid var(--success); margin: 5px 0; }
-        .error { color: var(--danger); font-weight: bold; }
-        .loading { text-align: center; padding: 20px; }
-        
-        /* Participant checkboxes for better UI */
-        .participant-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
-        .participant-group label { display: inline-flex; align-items: center; cursor: pointer; background: var(--light); padding: 5px 10px; border-radius: 5px; border: 1px solid #ddd; font-weight: normal;}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mysore & Coorg Expense Tracker</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+:root {
+    --bg:#f8f9fa;
+    --card:#ffffff;
+    --text:#212529;
+    --primary:#0d6efd;
+}
+body.dark {
+    --bg:#121212;
+    --card:#1e1e1e;
+    --text:#eaeaea;
+    --primary:#66b2ff;
+}
+
+body {
+    font-family:Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    margin:0;
+    padding:20px;
+}
+.container { max-width:1000px; margin:auto; }
+
+.card {
+    background:var(--card);
+    padding:20px;
+    border-radius:8px;
+    box-shadow:0 4px 6px rgba(0,0,0,.1);
+    margin-bottom:20px;
+}
+
+h1,h2,h3 { border-bottom:2px solid #ccc; padding-bottom:5px; }
+
+.grid { display:grid; gap:20px; }
+.grid-2 { grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+
+input,select {
+    width:100%;
+    padding:8px;
+    margin-top:5px;
+    border-radius:4px;
+    border:1px solid #ccc;
+}
+
+button {
+    background:var(--primary);
+    color:white;
+    padding:10px 15px;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    margin-top:15px;
+}
+
+/* Dark Mode Toggle */
+.toggle {
+    float:right;
+    cursor:pointer;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:20px;
+    background:var(--primary);
+    color:white;
+}
+
+/* Responsive Table */
+table { width:100%; border-collapse:collapse; }
+th,td { padding:8px; border-bottom:1px solid #ccc; }
+
+@media(max-width:600px){
+table,thead,tbody,tr,td{display:block;width:100%}
+thead{display:none}
+tr{
+    margin-bottom:15px;
+    background:var(--card);
+    padding:10px;
+    border-radius:6px;
+}
+td{
+    text-align:right;
+    padding-left:50%;
+    position:relative;
+}
+td::before{
+    content:attr(data-label);
+    position:absolute;
+    left:10px;
+    font-weight:bold;
+}
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
-    <h1>💰 Mysore & Coorg Expense Tracker</h1>
-    <hr>
 
-    <div class="card">
-        <h2>➕ Log New Expense</h2>
-        <form id="expense-form">
-            <div class="grid grid-2">
-                <div>
-                    <label for="Date">Date</label>
-                    <input type="date" id="Date" name="Date" required value="<?php echo date('Y-m-d'); ?>">
-                </div>
-                <div>
-                    <label for="Amount">Amount (INR)</label>
-                    <input type="number" id="Amount" name="Amount" min="0.01" step="0.01" required>
-                </div>
-            </div>
-            
-            <label for="Description">Description</label>
-            <input type="text" id="Description" name="Description" required>
-            
-            <div class="grid grid-2">
-                <div>
-                    <label for="Category">Category</label>
-                    <select id="Category" name="Category" required>
-                        <option value="Food">Food & Drink</option>
-                        <option value="Accommodation">Accommodation</option>
-                        <option value="Transport">Transport (Fuel/Cabs)</option>
-                        <option value="Activities">Activities & Entry Fees</option>
-                        <option value="Shopping">Shopping/Misc</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="Payer">Payer (Who paid the total amount?)</label>
-                    <select id="Payer" name="Payer" required></select>
-                </div>
-            </div>
-            
-            <label>Participants (Who owes?)</label>
-            <div class="participant-group" id="Participants-group">
-                </div>
-            
-            <button type="submit">Submit Expense</button>
-            <p id="message" style="margin-top: 10px;"></p>
-        </form>
-    </div>
+<h1>
+💰 Mysore & Coorg Expense Tracker
+<span class="toggle" onclick="toggleDark()">🌙 Dark Mode</span>
+</h1>
 
-    <hr>
-    
-    <h2 id="dashboard-heading">📊 Trip Dashboard & Analysis</h2>
-    <div class="loading" id="loading-indicator">Loading trip data...</div>
-    <div class="grid grid-2" id="charts-and-summary" style="display: none;">
-        
-        <div class="card">
-            <h3>Total Spend by Category</h3>
-            <canvas id="category-chart"></canvas>
-        </div>
+<div class="card">
+<h2>➕ Log Expense</h2>
+<form id="expense-form">
 
-        <div class="card">
-            <h3>Total Paid by Each Person</h3>
-            <canvas id="paid-chart"></canvas>
-        </div>
-        
-    </div>
-    
-    <div class="card" style="margin-top: 20px;">
-        <h3>💰 Final Settlement Plan (Simplified)</h3>
-        <div id="settlement-summary">
-            </div>
-    </div>
-    
-    <div class="card" style="margin-top: 20px;">
-        <h3>🧾 All Expenses</h3>
-        <table id="expense-list-table" style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background-color: var(--dark); color: white;">
-                    <th style="padding: 8px; text-align: left;">Date</th>
-                    <th style="padding: 8px; text-align: left;">Description</th>
-                    <th style="padding: 8px; text-align: right;">Amount</th>
-                    <th style="padding: 8px; text-align: left;">Payer</th>
-                    <th style="padding: 8px; text-align: left;">Participants</th>
-                </tr>
-            </thead>
-            <tbody>
-                </tbody>
-        </table>
-    </div>
+<div class="grid grid-2">
+<div>
+<label>Date</label>
+<input type="date" id="Date" required>
+</div>
+<div>
+<label>Amount</label>
+<input type="number" id="Amount" step="0.01" required>
+</div>
+</div>
 
-</div> <script>
-    // --- 1. CONFIGURATION ---
-    // !!! REPLACE THIS WITH YOUR DEPLOYED GOOGLE APPS SCRIPT URL !!!
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwG_q83JHgzkjW5jQbVhSRSCN0sPvSrc7PoidwNAqYVIy3uA9um3ScRiNZSXA4Hw9qYtg/exec'; 
-    const categories = ["Food", "Accommodation", "Transport", "Activities", "Shopping"];
+<label>Description</label>
+<input type="text" id="Description" required>
 
-    let participants = []; // Will be loaded from the backend
-    let allExpenses = []; // Will be loaded from the backend
-    
-    // --- 2. CORE UTILITY FUNCTIONS ---
+<div class="grid grid-2">
+<div>
+<label>Category</label>
+<select id="Category">
+<option>Food</option>
+<option>Accommodation</option>
+<option>Transport</option>
+<option>Activities</option>
+<option>Shopping</option>
+</select>
+</div>
+<div>
+<label>Payer</label>
+<select id="Payer"></select>
+</div>
+</div>
 
-    /**
-     * Calculates the net balance for each participant and simplifies settlements.
-     * @param {Array<Object>} expenses - The list of all expenses.
-     * @param {Array<string>} names - List of all participants.
-     * @returns {Object} { balances: Map, payments: Object, categoryTotals: Object }
-     */
-    function calculateBalances(expenses, names) {
-        const balances = new Map(names.map(name => [name, 0]));
-        const payments = new Map(names.map(name => [name, 0]));
-        const categoryTotals = {};
+<button type="submit">Submit Expense</button>
+<p id="message"></p>
+</form>
+</div>
 
-        expenses.forEach(exp => {
-            const amount = parseFloat(exp.Amount);
-            if (isNaN(amount)) return;
+<div class="card">
+<h3>🧾 All Expenses</h3>
+<table id="expense-list-table">
+<thead>
+<tr>
+<th>Date</th>
+<th>Description</th>
+<th>Amount</th>
+<th>Payer</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
 
-            // 1. Calculate Payer's Total Payments
-            payments.set(exp.Payer, (payments.get(exp.Payer) || 0) + amount);
+</div>
 
-            // 2. Tally Category Totals
-            categoryTotals[exp.Category] = (categoryTotals[exp.Category] || 0) + amount;
+<script>
+const WEB_APP_URL = 'YOUR_GOOGLE_SCRIPT_URL';
 
-            // 3. Calculate Net Balances
-            const participantsList = exp.Participants.split(',').map(p => p.trim()).filter(p => p);
-            
-            if (participantsList.length > 0) {
-                const share = amount / participantsList.length;
+// 🔒 Fixed Participants (always included)
+const PARTICIPANTS = [
+ "Sudharsan",
+ "Varadhaganapathy",
+ "Aathavan",
+ "Surendhar"
+];
 
-                // Credit the payer the total amount
-                balances.set(exp.Payer, (balances.get(exp.Payer) || 0) + amount);
-                
-                // Debit each participant (including the payer) their share
-                participantsList.forEach(p => {
-                    balances.set(p, (balances.get(p) || 0) - share);
-                });
-            }
-        });
-        
-        // --- 4. Simplify Settlement Plan (Minimizing transactions) ---
-        let creditors = [];
-        let debtors = [];
-        
-        // Separate people who are owed money (creditors) from those who owe (debtors)
-        balances.forEach((balance, name) => {
-            if (balance > 0.01) creditors.push({ name: name, balance: balance }); // Owed money
-            else if (balance < -0.01) debtors.push({ name: name, balance: -balance }); // Owes money (absolute value)
-        });
+document.getElementById("Date").value =
+new Date().toISOString().substring(0,10);
 
-        const settlements = [];
-        let i = 0; // Debtors index
-        let j = 0; // Creditors index
+// Populate Payer dropdown
+const payerSelect=document.getElementById("Payer");
+PARTICIPANTS.forEach(p=>{
+const o=document.createElement("option");
+o.value=o.textContent=p;
+payerSelect.appendChild(o);
+});
 
-        // Two-pointer approach to simplify settlements
-        while (i < debtors.length && j < creditors.length) {
-            let debtor = debtors[i];
-            let creditor = creditors[j];
+// Dark mode persistence
+function toggleDark(){
+document.body.classList.toggle("dark");
+localStorage.setItem("dark",
+document.body.classList.contains("dark"));
+}
+if(localStorage.getItem("dark")==="true")
+document.body.classList.add("dark");
 
-            const transferAmount = Math.min(debtor.balance, creditor.balance);
-            
-            if (transferAmount > 0.01) {
-                settlements.push({
-                    from: debtor.name,
-                    to: creditor.name,
-                    amount: transferAmount
-                });
-            }
+// Render table
+function renderExpenseList(data){
+const tbody=document.querySelector("tbody");
+tbody.innerHTML="";
+data.reverse().forEach(e=>{
+tbody.innerHTML+=`
+<tr>
+<td data-label="Date">${e.Date}</td>
+<td data-label="Description">${e.Description}</td>
+<td data-label="Amount">₹${Number(e.Amount).toFixed(2)}</td>
+<td data-label="Payer">${e.Payer}</td>
+</tr>`;
+});
+}
 
-            // Update balances after transfer
-            debtor.balance -= transferAmount;
-            creditor.balance -= transferAmount;
+// Submit expense
+document.getElementById("expense-form")
+.addEventListener("submit",async e=>{
+e.preventDefault();
+const msg=document.getElementById("message");
 
-            // Move pointers
-            if (debtor.balance <= 0.01) i++; // Debtor is settled
-            if (creditor.balance <= 0.01) j++; // Creditor is settled
-        }
+const payload={
+Date:Date.value,
+Amount:Number(Amount.value).toFixed(2),
+Description:Description.value,
+Category:Category.value,
+Payer:Payer.value,
+Participants:PARTICIPANTS.join(", ")
+};
 
-        return { 
-            balances: balances, 
-            payments: payments, 
-            categoryTotals: categoryTotals, 
-            settlements: settlements
-        };
-    }
+msg.textContent="Submitting...";
 
-    // --- 3. DOM & DATA HANDLING ---
+await fetch(WEB_APP_URL,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(payload)
+});
 
-    // Populate participant dropdowns and checkboxes
-    function populateParticipantFields(names) {
-        const payerSelect = document.getElementById('Payer');
-        const participantsGroup = document.getElementById('Participants-group');
-        
-        payerSelect.innerHTML = '';
-        participantsGroup.innerHTML = '';
-        
-        names.forEach(name => {
-            // Payer Dropdown
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            payerSelect.appendChild(option);
-
-            // Participants Checkboxes
-            const label = document.createElement('label');
-            label.innerHTML = `
-                <input type="checkbox" name="Participant" value="${name}" checked style="margin-right: 5px;">
-                ${name}
-            `;
-            participantsGroup.appendChild(label);
-        });
-    }
-    
-    // Renders the list of expenses in the table
-    function renderExpenseList(expenses) {
-        const tbody = document.getElementById('expense-list-table').getElementsByTagName('tbody')[0];
-        tbody.innerHTML = '';
-        
-        expenses.reverse().forEach(exp => { // Show newest first
-            const row = tbody.insertRow();
-            row.insertCell().textContent = exp.Date;
-            row.insertCell().textContent = exp.Description;
-            row.insertCell().textContent = `₹${parseFloat(exp.Amount).toFixed(2)}`;
-            row.insertCell().textContent = exp.Payer;
-            row.insertCell().textContent = exp.Participants;
-        });
-    }
-
-    // Renders the simplified settlement plan
-    function renderSettlementSummary(settlements) {
-        const container = document.getElementById('settlement-summary');
-        container.innerHTML = '';
-        
-        if (settlements.length === 0) {
-            container.innerHTML = '<p style="border-left-color: var(--secondary);">Everyone is settled up! Zero balance.</p>';
-            return;
-        }
-        
-        settlements.forEach(s => {
-            const p = document.createElement('p');
-            p.innerHTML = `<strong>${s.from}</strong> pays <strong>${s.to}</strong>: 
-                           <span style="color: var(--danger);">₹${s.amount.toFixed(2)}</span>`;
-            container.appendChild(p);
-        });
-    }
-    
-    // --- 4. CHART RENDERING ---
-
-    let categoryChartInstance = null;
-    let paidChartInstance = null;
-
-    function renderCharts(categoryTotals, payments) {
-        const chartColors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d'];
-
-        // CATEGORY PIE CHART
-        if (categoryChartInstance) categoryChartInstance.destroy();
-        const categoryLabels = Object.keys(categoryTotals);
-        const categoryData = Object.values(categoryTotals);
-        const categoryCtx = document.getElementById('category-chart').getContext('2d');
-        categoryChartInstance = new Chart(categoryCtx, {
-            type: 'pie',
-            data: {
-                labels: categoryLabels,
-                datasets: [{
-                    data: categoryData,
-                    backgroundColor: categoryLabels.map((_, i) => chartColors[i % chartColors.length]),
-                    hoverOffset: 4
-                }]
-            },
-            options: { responsive: true, plugins: { legend: { position: 'top' }, title: { display: false } } }
-        });
-        
-        // PAID BAR CHART
-        if (paidChartInstance) paidChartInstance.destroy();
-        const paidLabels = Array.from(payments.keys());
-        const paidData = Array.from(payments.values());
-        const paidCtx = document.getElementById('paid-chart').getContext('2d');
-        paidChartInstance = new Chart(paidCtx, {
-            type: 'bar',
-            data: {
-                labels: paidLabels,
-                datasets: [{
-                    label: 'Total Paid (INR)',
-                    data: paidData,
-                    backgroundColor: paidLabels.map((_, i) => chartColors[i % chartColors.length]),
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
-    
-    // --- 5. MAIN FUNCTIONS ---
-    
-    async function fetchDataAndRender() {
-        document.getElementById('loading-indicator').style.display = 'block';
-        document.getElementById('charts-and-summary').style.display = 'none';
-
-        try {
-            const response = await fetch(WEB_APP_URL, { method: 'GET' });
-            if (!response.ok) throw new Error('Network response was not ok');
-            
-            const data = await response.json();
-            
-            if (data.error) throw new Error(data.error);
-            
-            allExpenses = data.expenses;
-            participants = data.participants;
-
-            // 1. Populate UI elements
-            populateParticipantFields(participants);
-            
-            // 2. Calculate and process
-            const { payments, categoryTotals, settlements } = calculateBalances(allExpenses, participants);
-
-            // 3. Render
-            renderExpenseList(allExpenses);
-            renderCharts(categoryTotals, payments);
-            renderSettlementSummary(settlements);
-
-            document.getElementById('charts-and-summary').style.display = 'grid';
-            
-        } catch (error) {
-            console.error("Error fetching or processing data:", error);
-            document.getElementById('dashboard-heading').innerHTML = `<span class="error">❌ Error loading data: ${error.message}. Check the Web App URL and permissions.</span>`;
-        } finally {
-            document.getElementById('loading-indicator').style.display = 'none';
-        }
-    }
-    
-    async function submitExpense(event) {
-        event.preventDefault();
-        const form = event.target;
-        const submitButton = form.querySelector('button');
-        const messageContainer = document.getElementById('message');
-        messageContainer.textContent = 'Submitting...';
-        submitButton.disabled = true;
-
-        const formData = new FormData(form);
-        const expenseData = {};
-        
-        // 1. Get simple text/number fields
-        formData.forEach((value, key) => {
-            if (key !== 'Participant') {
-                expenseData[key] = value;
-            }
-        });
-        
-        // 2. Handle Participants (checkboxes)
-        const selectedParticipants = Array.from(form.querySelectorAll('input[name="Participant"]:checked'))
-                                          .map(cb => cb.value);
-        expenseData.Participants = selectedParticipants.join(', ');
-        
-        // 3. Final validation/preparation
-        expenseData.Amount = parseFloat(expenseData.Amount).toFixed(2);
-        
-        try {
-            const response = await fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                // Apps Script expects the data in the body
-                body: JSON.stringify(expenseData)
-            });
-
-            const result = await response.json();
-            
-            if (result.status === 'success') {
-                messageContainer.textContent = '✅ Expense submitted successfully!';
-                form.reset();
-                document.getElementById('Date').value = new Date().toISOString().substring(0, 10);
-                
-                // Re-fetch data to update charts/summary
-                await fetchDataAndRender(); 
-            } else {
-                throw new Error(result.message || 'Unknown submission error.');
-            }
-        } catch (error) {
-            messageContainer.textContent = `❌ Submission failed: ${error.message}`;
-            console.error('Submission Error:', error);
-        } finally {
-            submitButton.disabled = false;
-        }
-    }
-
-    // --- 6. INITIALIZATION ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Set today's date as default
-        document.getElementById('Date').value = new Date().toISOString().substring(0, 10);
-        
-        // Attach form handler
-        document.getElementById('expense-form').addEventListener('submit', submitExpense);
-        
-        // Load initial data
-        fetchDataAndRender();
-    });
-
+msg.textContent="✅ Expense added";
+e.target.reset();
+Date.value=new Date().toISOString().substring(0,10);
+});
 </script>
 
 </body>
 </html>
-
