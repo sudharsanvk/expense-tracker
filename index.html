@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +20,6 @@ body.dark {
     --text:#eaeaea;
     --primary:#66b2ff;
 }
-
 body {
     font-family:Arial,sans-serif;
     background:var(--bg);
@@ -30,7 +28,6 @@ body {
     padding:20px;
 }
 .container { max-width:1000px; margin:auto; }
-
 .card {
     background:var(--card);
     padding:20px;
@@ -38,9 +35,7 @@ body {
     box-shadow:0 4px 6px rgba(0,0,0,.1);
     margin-bottom:20px;
 }
-
 h1,h2,h3 { border-bottom:2px solid #ccc; padding-bottom:5px; }
-
 .grid { display:grid; gap:20px; }
 .grid-2 { grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
 
@@ -51,7 +46,6 @@ input,select {
     border-radius:4px;
     border:1px solid #ccc;
 }
-
 button {
     background:var(--primary);
     color:white;
@@ -168,9 +162,11 @@ td::before{
 </div>
 
 <script>
-const WEB_APP_URL = 'YOUR_GOOGLE_SCRIPT_URL';
+/* ✅ SAME WEB APP URL */
+const WEB_APP_URL =
+'https://script.google.com/macros/s/AKfycbwG_q83JHgzkjW5jQbVhSRSCN0sPvSrc7PoidwNAqYVIy3uA9um3ScRiNZSXA4Hw9qYtg/exec';
 
-// 🔒 Fixed Participants (always included)
+/* 🔒 Fixed Participants */
 const PARTICIPANTS = [
  "Sudharsan",
  "Varadhaganapathy",
@@ -178,18 +174,17 @@ const PARTICIPANTS = [
  "Surendhar"
 ];
 
-document.getElementById("Date").value =
-new Date().toISOString().substring(0,10);
+/* Date default */
+Date.value = new Date().toISOString().substring(0,10);
 
-// Populate Payer dropdown
-const payerSelect=document.getElementById("Payer");
+/* Populate payer dropdown */
 PARTICIPANTS.forEach(p=>{
 const o=document.createElement("option");
 o.value=o.textContent=p;
-payerSelect.appendChild(o);
+Payer.appendChild(o);
 });
 
-// Dark mode persistence
+/* Dark mode persistence */
 function toggleDark(){
 document.body.classList.toggle("dark");
 localStorage.setItem("dark",
@@ -198,7 +193,7 @@ document.body.classList.contains("dark"));
 if(localStorage.getItem("dark")==="true")
 document.body.classList.add("dark");
 
-// Render table
+/* Render expense table */
 function renderExpenseList(data){
 const tbody=document.querySelector("tbody");
 tbody.innerHTML="";
@@ -213,11 +208,11 @@ tbody.innerHTML+=`
 });
 }
 
-// Submit expense
+/* Submit expense */
 document.getElementById("expense-form")
 .addEventListener("submit",async e=>{
 e.preventDefault();
-const msg=document.getElementById("message");
+message.textContent="Submitting...";
 
 const payload={
 Date:Date.value,
@@ -228,15 +223,13 @@ Payer:Payer.value,
 Participants:PARTICIPANTS.join(", ")
 };
 
-msg.textContent="Submitting...";
-
 await fetch(WEB_APP_URL,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify(payload)
 });
 
-msg.textContent="✅ Expense added";
+message.textContent="✅ Expense added";
 e.target.reset();
 Date.value=new Date().toISOString().substring(0,10);
 });
